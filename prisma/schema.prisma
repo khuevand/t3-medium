@@ -11,11 +11,14 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+// build new database
 
-    @@index([name])
+model Post {
+    id        String      @id @default(cuid())
+    createdAt DateTime @default(now()) //default
+    updatedAt DateTime @updatedAt
+    content String @default("default content")
+    authorId String @default("unknown")
+
+    @@index([authorId]) // index by author id -> incase of searching of the whole table
 }
