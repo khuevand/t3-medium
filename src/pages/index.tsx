@@ -7,6 +7,7 @@ import Image from "next/image";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { api } from "~/utils/api";
 import type { RouterOutputs } from "~/utils/api";
+import { LoadingPage} from "~/components/loading";
 
 dayjs.extend(relativeTime)
 
@@ -54,15 +55,30 @@ const PostView = (props: PostWithUser) => {
   )
 }
 
+
+const Feed = () => {
+  // tRPC React hook fetches data from your getAll endpoint under postRouter.
+  // retrieve data from the query and rename isLoading -> use multiple time
+  const { data, isLoading: postLoading } = api.post.getAll.useQuery();
+
+  if (postLoading) return <LoadingPage />
+
+  if (!data) return <div>Something went wrong...</div>
+  return(
+    <div className="flex flex-col">
+      {/* return 1 post view for everypost following the key*/}          
+      {[...data, ...data]?.map((fullPost) => (
+        <PostView {...fullPost} key={fullPost.post.id} />
+      ))}
+    </div>
+  )
+}
 export default function Home() {
-  const user = useUser();
-  // fetch data from the database
-  const {data, isLoading} = api.post.getAll.useQuery();
-  console.log(user);
-
-  if (isLoading) return <div>Loading...</div>
-  if (!data) return <div>Something went wrong</div>
-
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
+  // Start fetch data from the database ASAP
+  api.post.getAll.useQuery();
+  // return empty div if both aren't loaded since user loaded faster
+  if (!userLoaded) return <div/>
 
   return (
     // flex item allow to shrink grow
@@ -70,19 +86,14 @@ export default function Home() {
     <main className="flex h-screen justify-center">
       <div className="h-full w-full md:max-w-2xl bg-black border-x border-slate-400">
         <div className="border-b border-slate-400 p-4 flex">
-          {!user.isSignedIn && (
+          {!isSignedIn && (
             <div className="flex justify-center">
               <SignInButton /> 
           </div>
           )}
-          {user.isSignedIn && <CreatePostWizard/> }
+          {isSignedIn && <CreatePostWizard/> }
         </div>
-        <div className="flex flex-col">
-          {/* return 1 post view for everypost following the key*/}          
-          {[...data, ...data]?.map((fullPost) => (
-            <PostView {...fullPost} key={fullPost.post.id} />
-          ))}
-        </div>
+        <Feed />
         </div>
     </main>
   );
