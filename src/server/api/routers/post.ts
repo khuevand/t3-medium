@@ -1,10 +1,12 @@
 import { User } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
+import { Content } from "next/font/google";
 import { userInfo } from "os";
 import { z } from "zod";
+import { zEmoji } from "zod-emoji";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 
 const filterUserForClient = (user: User) => {
   return {id: user.id,
@@ -16,6 +18,7 @@ export const postRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.db.post.findMany({
       take: 100,
+      orderBy: [{createdAt: "desc"}],
     });
 
     // retrieve 100 userid to connect to user
@@ -48,5 +51,24 @@ export const postRouter = createTRPCRouter({
     });
 
     return post ?? null;
+  }),
+
+  // use zoc: validator
+  create: privateProcedure
+  .input(
+    z.object({
+      content: z.string().emoji().min(1).max(280), // character: 1->280
+    })
+  )
+  .mutation(async ({ ctx, input }) => {
+    // when use private, authorid can work without it exists
+    const authorId = ctx.currentUser.id;
+    const post = await ctx.db.post.create({
+      data: {
+        authorId,
+        content: input.content,
+      },
+    });
+    return post;
   }),
 });

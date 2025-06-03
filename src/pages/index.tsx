@@ -1,7 +1,7 @@
 import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
 // import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { use } from "react";
+import { use, useState } from "react";
 import dayjs from "dayjs";
 import Image from "next/image";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -13,6 +13,15 @@ dayjs.extend(relativeTime)
 
 const CreatePostWizard = () => {
   const {user} = useUser();
+  const [input, setInput] = useState("");
+  const ctx = api.useContext();
+
+  const postMutation = api.post.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.post.getAll.invalidate();
+    },
+  });
 
   console.log(user);
 
@@ -27,7 +36,16 @@ const CreatePostWizard = () => {
         width={56}
         height={56}
       />
-      <input placeholder="Type some emojis!" className="grow bg-transparent outline-none"/>
+      <input placeholder="Type some emojis!"
+      className="grow bg-transparent outline-none"
+      type="text"
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      disabled={postMutation.isPending}
+      />
+      <button onClick={() => postMutation.mutate({ content: input })}
+      disabled={postMutation.isPending || input === ""}
+      >Post</button>
     </div>
     );
 }
@@ -67,7 +85,7 @@ const Feed = () => {
   return(
     <div className="flex flex-col">
       {/* return 1 post view for everypost following the key*/}          
-      {[...data, ...data]?.map((fullPost) => (
+      {data.map((fullPost) => (
         <PostView {...fullPost} key={fullPost.post.id} />
       ))}
     </div>
