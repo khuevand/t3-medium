@@ -5,6 +5,11 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+    reactStrictMode: true,
+    images: {
+        domains: ["img.clerk.com", "images.clerk.dev"],
+    },
+};
 
 export default config;

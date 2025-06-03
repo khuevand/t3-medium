@@ -23,9 +23,9 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ClerkProvider>
       <Head>
-        <title>Clonedium3</title>
-        <meta name="description" content="👀" />
-        <link rel="icon" href="/favicon.ico" />
+        <title>t3-medium</title>
+        {/* <meta name="description" content="👀" /> */}
+        {/* <link rel="icon" href="/favicon.ico" /> */}
       </Head>
       <Component {...pageProps} />
     </ClerkProvider>
