@@ -7,7 +7,9 @@ import Image from "next/image";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { api } from "~/utils/api";
 import type { RouterOutputs } from "~/utils/api";
-import { LoadingPage} from "~/components/loading";
+import { LoadingPage, LoadingSpinner} from "~/components/loading";
+import toast, { Toaster } from "react-hot-toast";
+import { error } from "console";
 
 dayjs.extend(relativeTime)
 
@@ -21,12 +23,22 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.post.getAll.invalidate();
     },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.content;
+      if (errorMessage && errorMessage[0]) {
+        toast.error(errorMessage[0]);
+      }
+      else {
+        toast.error("Failed to post! Please try again later.");
+      }
+    },
   });
 
   console.log(user);
 
   if (!user) return null;
 
+  // POST STRUCTURE //
   return (
     <div className="flex gap-3 w-full">
       <Image 
@@ -41,13 +53,27 @@ const CreatePostWizard = () => {
       type="text"
       value={input}
       onChange={(e) => setInput(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter"){
+          e.preventDefault();
+          if (input !== ""){
+           postMutation.mutate({content: input})
+          }
+        }
+      }}
       disabled={postMutation.isPending}
       />
-      <button onClick={() => postMutation.mutate({ content: input })}
-      disabled={postMutation.isPending || input === ""}
-      >Post</button>
+      {input !== "" && !postMutation.isPending && (
+        <button onClick={() => postMutation.mutate({ content: input })}>Post</button>
+      )}
+
+      {postMutation.isPending && (
+        <div className="flex justify-center items-center">
+          <LoadingSpinner size={20} />
+        </div>
+      )}
     </div>
-    );
+  );
 }
 
 // use helper from api to select the types used from post.getAll -> create new type
