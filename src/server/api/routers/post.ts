@@ -1,10 +1,11 @@
-import { User } from "@clerk/nextjs/server";
+import type { User } from "@clerk/nextjs/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { TRPCError } from "@trpc/server";
 import { Content } from "next/font/google";
 import { userInfo } from "os";
 import { z } from "zod";
-import { zEmoji } from "zod-emoji";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 
@@ -13,6 +14,15 @@ const filterUserForClient = (user: User) => {
           username: user.username ?? user.firstName ?? "Unknown",
           profilePicture: user.imageUrl}
 }
+
+
+// Create a new ratelimiter, that allows 3 requests per 1 minute -> stop user from spamming
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(3, "1 m"),
+  analytics: true,
+  prefix: "@upstash/ratelimit",
+});
 
 export const postRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
@@ -63,6 +73,11 @@ export const postRouter = createTRPCRouter({
   .mutation(async ({ ctx, input }) => {
     // when use private, authorid can work without it exists
     const authorId = ctx.currentUser.id;
+
+    const { success } = await ratelimit.limit(authorId);
+
+    if (!success) throw new TRPCError({code: "TOO_MANY_REQUESTS"});
+
     const post = await ctx.db.post.create({
       data: {
         authorId,
