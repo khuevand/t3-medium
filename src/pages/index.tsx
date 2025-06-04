@@ -41,13 +41,13 @@ const CreatePostWizard = () => {
   // POST STRUCTURE //
   return (
     <div className="flex gap-3 w-full">
-      <Image 
+      <Link href={`/@${user.username}`}><Image 
         src={user.imageUrl}
         alt="Profile image"
         className="w-14 h-14 rounded-full"
         width={56}
         height={56}
-      />
+      /></Link>
       <input placeholder="Type some emojis!"
       className="grow bg-transparent outline-none"
       type="text"
@@ -83,15 +83,15 @@ const PostView = (props: PostWithUser) => {
   const { post, author } = props;
   return (
     <div key={post.id} className="border-b border-slate-400 p-4 flex gap-3">
-      <Image src={author.profilePicture} className="h-14 w-14 rounded-full"
+      <Link href={`/@${author.username}`}><Image src={author.profilePicture} className="h-14 w-14 rounded-full"
       alt={`@${author.username}'s profile picture`}
       width={56}
       height={56}
-      />
+      /></Link>
       <div className="flex flex-col">
         <div className="flex text-slate-300 font-bold gap-1">
-          <span>{`@${author.username} `}</span>
-          <span className="font-thin">{` . ${dayjs(post.createdAt).fromNow()}`}</span>
+          <Link href={`/@${author.username}`}><span>{`@${author.username} `}</span></Link>
+          <Link href={`/post/${post.id}`}><span className="font-thin">{` . ${dayjs(post.createdAt).fromNow()}`}</span></Link>
         </div>
           <span className="text-2xl">{post.content}</span>
       </div>
