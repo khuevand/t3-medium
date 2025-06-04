@@ -24,7 +24,9 @@ const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ClerkProvider>
       <Head>
-        <title>t3-medium</title>
+        <title>T3-medium</title>
+        <meta name="description" content="💭" />
+        <link rel="icon" href="/favicon.ico" />
       </Head>
       <Toaster position="bottom-center"/>
       <Component {...pageProps} />

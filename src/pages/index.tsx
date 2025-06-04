@@ -10,6 +10,8 @@ import type { RouterOutputs } from "~/utils/api";
 import { LoadingPage, LoadingSpinner} from "~/components/loading";
 import toast, { Toaster } from "react-hot-toast";
 import { error } from "console";
+import Head from "next/head";
+import { PageLayout } from "~/components/layout";
 
 dayjs.extend(relativeTime)
 
@@ -127,8 +129,7 @@ export default function Home() {
   return (
     // flex item allow to shrink grow
     // only have max as 2xl if the size is medium || large
-    <main className="flex h-screen justify-center">
-      <div className="h-full w-full md:max-w-2xl bg-black border-x border-slate-400">
+      <PageLayout>
         <div className="border-b border-slate-400 p-4 flex">
           {!isSignedIn && (
             <div className="flex justify-center">
@@ -137,8 +138,6 @@ export default function Home() {
           )}
           {isSignedIn && <CreatePostWizard/> }
         </div>
-        <Feed />
-        </div>
-    </main>
+      <Feed /></PageLayout>
   );
 }
