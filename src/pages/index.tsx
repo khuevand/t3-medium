@@ -93,8 +93,8 @@ const PostView = (props: PostWithUser) => {
           <span className="text-2xl">{post.content}</span>
       </div>
     </div>
-  )
-}
+  );
+};
 
 
 const Feed = () => {

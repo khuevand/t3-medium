@@ -6,7 +6,33 @@ import { Redis } from "@upstash/redis";
 
 import { createTRPCRouter, privateProcedure, publicProcedure } from "~/server/api/trpc";
 import { filterUserForClient } from "~/server/helpers/filterUserForClient";
+import { G } from "node_modules/@upstash/redis/zmscore-DzNHSWxc.mjs";
+import type { Post } from "@prisma/client";
 
+const addUserDataToPosts = async (post: Post[]) => {
+// retrieve 100 userid to connect to user
+  const users = (await (await clerkClient()).users.getUserList({
+    userId: post.map((post) => post.authorId),
+    limit: 100,
+    })
+  ).data.map(filterUserForClient);
+
+  console.log("Users:", users);
+  return post.map((post) => {
+    const author = users.find((user) => user.id == post.authorId);
+    if (!author?.username) throw new TRPCError({code: "INTERNAL_SERVER_ERROR", 
+                                      message:"Author for post not found",
+                                    });
+    return {
+      post,
+      author: {
+        ...author,
+        username: author.username,
+
+      },
+    };
+  });
+};
 
 // Create a new ratelimiter, that allows 3 requests per 1 minute -> stop user from spamming
 const ratelimit = new Ratelimit({
@@ -22,29 +48,7 @@ export const postRouter = createTRPCRouter({
       take: 100,
       orderBy: [{createdAt: "desc"}],
     });
-
-    // retrieve 100 userid to connect to user
-    const users = (await (await clerkClient()).users.getUserList({
-      userId: posts.map((post) => post.authorId),
-      limit: 100,
-      })
-    ).data.map(filterUserForClient);
-
-    console.log("Users:", users);
-    return posts.map((post) => {
-      const author = users.find((user) => user.id == post.authorId);
-      if (!author?.username) throw new TRPCError({code: "INTERNAL_SERVER_ERROR", 
-                                        message:"Author for post not found",
-                                      });
-      return {
-        post,
-        author: {
-          ...author,
-          username: author.username,
-
-        },
-      };
-    });
+    return addUserDataToPosts(posts);
   }),
 
   getLatest: publicProcedure.query(async ({ ctx }) => {
@@ -54,6 +58,18 @@ export const postRouter = createTRPCRouter({
 
     return post ?? null;
   }),
+
+  getPostedByUserId: publicProcedure.input(z.object({
+    userId: z.string(),
+    })).query(({ctx, input}) => ctx.db.post.findMany({
+      where: {
+        authorId: input.userId,
+      },
+      take: 100,
+      orderBy: [{ createdAt: "desc" }],
+    })
+    .then(addUserDataToPosts)
+  ),
 
   // use zoc: validator
   create: privateProcedure
