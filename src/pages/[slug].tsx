@@ -4,13 +4,9 @@ import Head from "next/head";
 import { api } from "~/utils/api";
 import Image from "next/image";
 import { LoadingPage } from "~/components/loading";
-
-import { createServerSideHelpers } from '@trpc/react-query/server'
-import { appRouter } from "~/server/api/root";
-import { db } from "~/server/db";
-import superjson from "superjson";
-import { PageLayout } from "~/components/layout";
 import PostView from "~/components/postview";
+import { generateSSGHelper } from "~/server/helpers/ssgHelper";
+import { PageLayout } from "~/components/layout";
 
 type ProfileFeedProps = {
   userId: string;
@@ -67,12 +63,8 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
 }
 
 export const getStaticProps: GetStaticProps = async (context) => {
-  const helper = createServerSideHelpers({
-    router: appRouter,
-    ctx: {db, currentUser: null},
-    transformer: superjson, // optional - adds superjson serialization
-  });
-
+  
+  const helper = generateSSGHelper();
   const slug = context.params?.slug;
 
   if (typeof slug !== "string") throw new Error("no slug");
