@@ -27,6 +27,7 @@ const MyApp: AppType = ({ Component, pageProps }) => {
         <title>T3-medium</title>
         <meta name="description" content="💭" />
         <link rel="icon" href="/favicon.ico" />
+        <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter&display=swap" rel="stylesheet"/>
       </Head>
       <Toaster position="bottom-center"/>
       <Component {...pageProps} />

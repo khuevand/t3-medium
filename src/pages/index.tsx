@@ -1,4 +1,4 @@
-  import { SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
+  import { SignUpButton, SignInButton, SignOutButton, useUser } from "@clerk/nextjs";
   // import { useUser } from "@clerk/nextjs";
   import Link from "next/link";
   import { use, useState } from "react";
@@ -9,9 +9,9 @@
   import type { RouterOutputs } from "~/utils/api";
   import { LoadingPage, LoadingSpinner} from "~/components/loading";
   import toast, { Toaster } from "react-hot-toast";
-  import { error } from "console";
-  import Head from "next/head";
   import { PageLayout } from "~/components/layout";
+  import { FullPageLayout } from "~/components/outerpage";
+
 
   dayjs.extend(relativeTime)
 
@@ -127,15 +127,78 @@
     return (
       // flex item allow to shrink grow
       // only have max as 2xl if the size is medium || large
-        <PageLayout>
-          <div className="border-b border-slate-400 p-4 flex">
-            {!isSignedIn && (
-              <div className="flex justify-center">
-                <SignInButton /> 
+      <FullPageLayout>
+        {!isSignedIn ? (
+          <>
+            <header className="min-w-screen flex justify-between items-center pb-4.5 px-50 py-4.5 border-b border-black text-sm">
+              <div className="flex items-center gap-120 w-full">
+                {/* Left side: logo */}
+                <div className="px-35 text-3xl font-bold font-serif">Medium</div>
+
+                {/* Center/right side: nav links */}
+                <nav className="flex items-center gap-6">
+                  <a href="#" className="hover:underline">Our Story</a>
+                  <a href="#" className="hover:underline">Membership</a>
+                  <a href="#" className="hover:underline">Write</a>
+                  <a href="#" className="hover:underline">Sign in</a>
+                  <button className="ml-4 bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800">
+                    Get started
+                  </button>
+                </nav>
+              </div>
+            </header>
+            <div className="flex flex-row justify-between items-start w-full">
+              <div className="flex flex-col items-start text-left gap-4 pt-60 pl-80 w-full md:w-1/2">
+                <h1 className="text-8xl md:text-8xl font-serif leading-none">
+                    Human <br /> stories & ideas
+                </h1>
+                <p className="text-lg md:text-xl text-gray-800 mb-8">
+                  A place to read, write, and deepen your understanding
+                </p>
+                <SignUpButton>
+                  <button className="bg-black text-white px-10 py-2 rounded-full text-lg hover:bg-gray-800">
+                    Start reading
+                  </button>
+                </SignUpButton>
+              </div>
+
+                        {/* Right side: image */}
+              <div className="hidden md:block items-center max-w-screen pt-40">
+                <Image
+                  src="/medium_outer.png" // make sure this matches your actual file path
+                  alt="Illustration"
+                  width={350}
+                  height={350}
+                  className="w-full h-auto"
+                />
+              </div>
             </div>
-            )}
-            {isSignedIn && <CreatePostWizard/> }
-          </div>
-        <Feed /></PageLayout>
+            <footer className="min-w-screen flex justify-center gap-2 items-center mt-37 pt-6 pb-6 border-t border-black text-sm text-gray-600">
+              {/* Center/right side: nav links */}
+              <nav className="flex items-center gap-6">
+                <a href="#" className="hover:underline">Help</a>
+                <a href="#" className="hover:underline">Status</a>
+                <a href="#" className="hover:underline">About</a>
+                <a href="#" className="hover:underline">Careers</a>
+                <a href="#" className="hover:underline">Press</a>
+                <a href="#" className="hover:underline">Blog</a>
+                <a href="#" className="hover:underline">Privacy</a>
+                <a href="#" className="hover:underline">Rules</a>
+                <a href="#" className="hover:underline">Terms</a>
+                <a href="#" className="hover:underline">Text to speech</a>
+              </nav>
+            </footer>
+          </>
+        ) : (
+          // Authenticated view
+          <>
+            <div className="border-b border-slate-400 p-4">
+              <SignOutButton />
+              <CreatePostWizard />
+            </div>
+            <Feed />
+          </>
+        )}
+    </FullPageLayout>
     );
   }
