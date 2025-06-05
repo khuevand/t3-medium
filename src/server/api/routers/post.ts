@@ -9,6 +9,7 @@ import { filterUserForClient } from "~/server/helpers/filterUserForClient";
 import { G } from "node_modules/@upstash/redis/zmscore-DzNHSWxc.mjs";
 import type { Post } from "@prisma/client";
 
+
 const addUserDataToPosts = async (post: Post[]) => {
 // retrieve 100 userid to connect to user
   const users = (await (await clerkClient()).users.getUserList({
@@ -27,6 +28,7 @@ const addUserDataToPosts = async (post: Post[]) => {
       post,
       author: {
         ...author,
+        id: post.authorId,
         username: author.username,
 
       },
@@ -57,7 +59,7 @@ export const postRouter = createTRPCRouter({
 
   getAll: publicProcedure.query(async ({ ctx }) => {
     const posts = await ctx.db.post.findMany({
-      take: 100,
+      take: 100, // currently did not set unlimited due to small database
       orderBy: [{createdAt: "desc"}],
     });
     return addUserDataToPosts(posts);
@@ -77,7 +79,7 @@ export const postRouter = createTRPCRouter({
       where: {
         authorId: input.userId,
       },
-      take: 100,
+      take: 100, // currently did not set unlimited due to small database
       orderBy: [{ createdAt: "desc" }],
     })
     .then(addUserDataToPosts)
@@ -87,23 +89,33 @@ export const postRouter = createTRPCRouter({
   create: privateProcedure
   .input(
     z.object({
-      content: z.string().emoji("Only emojis are allowed").min(1).max(280), // character: 1->280
+      title: z.string().min(1).max(100),
+      subtitle: z.string().max(200).optional(),
+      content: z.string().emoji("Only emojis are allowed").min(1).max(280),
+      thumbnailUrl: z.string().url().optional(),
     })
   )
   .mutation(async ({ ctx, input }) => {
-    // when use private, authorid can work without it exists
     const authorId = ctx.currentUser.id;
+    const authorName = ctx.currentUser.username ?? "unknown"; // Adjust this based on your auth provider
 
     const { success } = await ratelimit.limit(authorId);
-
-    if (!success) throw new TRPCError({code: "TOO_MANY_REQUESTS"});
+    if (!success) throw new TRPCError({ code: "TOO_MANY_REQUESTS" });
 
     const post = await ctx.db.post.create({
       data: {
-        authorId,
+        title: input.title,
+        subtitle: input.subtitle ?? null,
         content: input.content,
+        thumbnailUrl: input.thumbnailUrl ?? null,
+        authorId,
+        authorName,
+        publishedAt: new Date(),
+        readTimeMin: 1, // optionally calculate based on content
+        claps: 0,
       },
     });
+
     return post;
   }),
 });

@@ -63,7 +63,7 @@ const ProfilePage: NextPage<{ username: string }> = ({ username }) => {
 }
 
 export const getStaticProps: GetStaticProps = async (context) => {
-  
+
   const helper = generateSSGHelper();
   const slug = context.params?.slug;
 
