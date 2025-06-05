@@ -25,4 +25,18 @@ export const profileRouter = createTRPCRouter({
         }
         return filterUserForClient(user);
     }),
+
+    getAllUsers: publicProcedure.query(async () => {
+    try {
+      const users = await (await clerkClient()).users.getUserList({ limit: 100 });
+
+      return users;
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to fetch users",
+      });
+    }
+  }),
 });

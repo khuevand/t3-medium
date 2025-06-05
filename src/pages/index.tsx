@@ -10,7 +10,10 @@ import { LoadingPage, LoadingSpinnerLOAD} from "~/components/loading";
 import toast, { Toaster } from "react-hot-toast";
 import { FullPageLayout } from "~/components/outerpage";
 import { PageLayout } from "~/components/layout";
-import { Search, SquarePen, Bell } from "lucide-react";
+import { Plus, Search, SquarePen, Bell } from "lucide-react";
+import Sidebar from "~/components/sidebar";
+import TopicSlider from "~/components/navigationBar";
+import PostView from "~/components/postview";
 
 dayjs.extend(relativeTime)
 
@@ -99,29 +102,6 @@ const CreatePostWizard = () => {
 
 // use helper from api to select the types used from post.getAll -> create new type
 type PostWithUser = RouterOutputs["post"]["getAll"][number];
-
-const PostView = (props: PostWithUser) => {
-  const { post, author } = props;
-  return (
-    <Link href={`/post/${post.id}`}>
-      <div key={post.id} className="border-b border-slate-400 p-4 flex gap-3">
-        <Link href={`/@${author.username}`}><Image src={author.profilePicture} className="h-14 w-14 rounded-full"
-        alt={`@${author.username}'s profile picture`}
-        width={56}
-        height={56}
-        /></Link>
-        <div className="flex flex-col">
-          <div className="flex text-slate-300 font-bold gap-1">
-            <Link href={`/@${author.username}`}><span>{`@${author.username} `}</span></Link>
-            <span className="font-thin">{` . ${dayjs(post.createdAt).fromNow()}`}</span>
-          </div>
-            <span className="text-2xl">{post.content}</span>
-        </div>
-      </div>
-    </Link>
-  );
-};
-
 
 const Feed = () => {
   // tRPC React hook fetches data from your getAll endpoint under postRouter.
@@ -281,6 +261,10 @@ export default function Home() {
           <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-6 py-6 max-w-7xl mx-auto">
             {/* Main Feed Section */}
             <section className="lg:col-span-8 space-y-6">
+
+              {/* Topic slider */}
+              <TopicSlider/>
+
               <div className="border-b border-slate-400 pb-4">
                 <CreatePostWizard />
               </div>
@@ -288,27 +272,9 @@ export default function Home() {
             </section>
 
             {/* Sidebar */}
-            <aside className="lg:col-span-4 space-y-6 hidden lg:block">
-              {/* Staff Picks */}
-              <div className="border border-slate-300 rounded-lg p-4">
-                <h2 className="font-semibold mb-2">Staff Picks</h2>
-                <ul className="space-y-2 text-sm">
-                  <li><a href="#" className="hover:underline">Why ChatGPT Creates Scientific Citations — That Don't Exist</a></li>
-                  <li><a href="#" className="hover:underline">How to — Finally — Change Your Name</a></li>
-                  <li><a href="#" className="hover:underline">Write with Medium June Challenge</a></li>
-                </ul>
-              </div>
-
-              {/* Recommended Topics */}
-              <div className="border border-slate-300 rounded-lg p-4">
-                <h2 className="font-semibold mb-2">Recommended Topics</h2>
-                <div className="flex flex-wrap gap-2">
-                  {["Programming", "Self Improvement", "Data Science", "Writing", "Relationships", "Technology", "Cryptocurrency"].map(topic => (
-                    <span key={topic} className="bg-slate-200 px-3 py-1 rounded-full text-xs hover:bg-slate-300 cursor-pointer">{topic}</span>
-                  ))}
-                </div>
-              </div>
-            </aside>
+            <section className="lg:col-span-4 border-l border-gray-200 min-h-screen">
+              <Sidebar />
+            </section>
           </main>
         </PageLayout>
       )};

@@ -25,7 +25,9 @@ const addUserDataToPosts = async (post: Post[]) => {
                                       message:"Author for post not found",
                                     });
     return {
-      post,
+      post: {
+        ...post,
+      },
       author: {
         ...author,
         id: post.authorId,
@@ -61,8 +63,19 @@ export const postRouter = createTRPCRouter({
     const posts = await ctx.db.post.findMany({
       take: 100, // currently did not set unlimited due to small database
       orderBy: [{createdAt: "desc"}],
+      include: {
+        author: true,
+        _count: {
+          select: { comments: true },
+        },
+      },
     });
-    return addUserDataToPosts(posts);
+    return addUserDataToPosts(
+      posts.map((p) => ({
+        ...p,
+        commentCount: p._count.comments,
+      }))
+    );
   }),
 
   getLatest: publicProcedure.query(async ({ ctx }) => {
