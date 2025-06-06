@@ -92,7 +92,6 @@ const Sidebar = () => {
   );
 };
 
-// components/UserDropdown.tsx (or inside the same file above Home)
 
 export const UserDropdown = ({ username }: { username: string }) => {
   return (

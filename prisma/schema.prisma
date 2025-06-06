@@ -12,24 +12,50 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
 model User {
-  id    String @id @default(cuid())
-  name  String
-  posts Post[]  @relation("UserPosts")
-  
+  id        String   @id @default(cuid())
+  name      String
+  posts     Post[]   @relation("UserPosts")
+  comments  Comment[]
+
+  // Followers: users who follow me
+  followedBy Follow[] @relation("Followee")
+
+  // Following: users I follow
+  following Follow[] @relation("Follower")
 }
 
+model Follow {
+  id         String   @id @default(cuid())
+  follower   User     @relation("Follower", fields: [followerId], references: [id])
+  followerId String
+
+  followee   User     @relation("Followee", fields: [followeeId], references: [id])
+  followeeId String
+
+  followedAt DateTime @default(now())
+
+  @@unique([followerId, followeeId]) // Prevent duplicate follows
+  @@index([followeeId])
+}
+
+
 model Comment {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  postId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  authorId  String
+  id         String   @id @default(cuid())
+  content    String
+  createdAt  DateTime @default(now())
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id])
+
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id])
+
   authorName String
 
   @@index([postId])
 }
+
 
 
 // build new database

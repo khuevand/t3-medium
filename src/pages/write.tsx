@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { api } from "~/utils/api";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import { CirclePlus } from "lucide-react";
 import { LoadingSpinnerLOAD } from "~/components/loading";
@@ -20,6 +21,7 @@ const CreatePostWizard = () => {
     onSuccess: (data) => {
       setTitle("");
       setContent("");
+      toast.success("Post published successfully!");
       void ctx.post.getAll.invalidate();
       void router.push(`/post/${data.id}`); 
     },
@@ -38,7 +40,9 @@ const CreatePostWizard = () => {
         <div className="max-w-4xl mx-auto flex items-center justify-between px-6 py-4">
           {/* Left: Logo + Draft */}
           <div className="flex items-center gap-3">
-            <div className="text-3xl font-bold font-serif">Medium</div>
+            <Link href="/">
+              <div className="text-3xl font-bold font-serif">Medium</div>
+            </Link>
             <span className="text-sm text-gray-500">Draft</span>
           </div>
 
