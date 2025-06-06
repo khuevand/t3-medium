@@ -10,95 +10,13 @@ import { LoadingPage, LoadingSpinnerLOAD} from "~/components/loading";
 import toast, { Toaster } from "react-hot-toast";
 import { FullPageLayout } from "~/components/outerpage";
 import { PageLayout } from "~/components/layout";
-import { Plus, Search, SquarePen, Bell } from "lucide-react";
-import Sidebar from "~/components/sidebar";
+import { Search, SquarePen, Bell } from "lucide-react";
+import Sidebar, { UserDropdown } from "~/components/sidebar";
 import TopicSlider from "~/components/navigationBar";
 import PostView from "~/components/postview";
+import { useRouter } from "next/router";
 
 dayjs.extend(relativeTime)
-
-const CreatePostWizard = () => {
-  const { user } = useUser();
-  const [title, setTitle] = useState("");
-  const [input, setInput] = useState(""); // content
-  const ctx = api.useContext();
-
-  const postMutation = api.post.create.useMutation({
-    onSuccess: () => {
-      setInput("");
-      setTitle("");
-      void ctx.post.getAll.invalidate();
-    },
-    onError: (e) => {
-      const titleError = e.data?.zodError?.fieldErrors?.title?.[0];
-      const contentError = e.data?.zodError?.fieldErrors?.content?.[0];
-      toast.error(titleError ?? contentError ?? "Failed to post! Please try again later.");
-    },
-  });
-
-  if (!user) return null;
-
-  return (
-    <div className="flex flex-col gap-3 w-full">
-      <div className="flex items-center gap-3">
-        <Link href={`/@${user.username}`}>
-          <Image
-            src={user.imageUrl}
-            alt="Profile image"
-            className="w-14 h-14 rounded-full"
-            width={56}
-            height={56}
-          />
-        </Link>
-        <div className="flex flex-col grow gap-2">
-          <input
-            placeholder="Post title"
-            className="bg-transparent border-b border-gray-300 outline-none"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            disabled={postMutation.isPending}
-          />
-          <input
-            placeholder="Type some emojis!"
-            className="bg-transparent outline-none"
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && title !== "" && input !== "") {
-                e.preventDefault();
-                postMutation.mutate({
-                  title,
-                  content: input,
-                });
-              }
-            }}
-            disabled={postMutation.isPending}
-          />
-        </div>
-      </div>
-
-      {title !== "" && input !== "" && !postMutation.isPending && (
-        <button
-          onClick={() => postMutation.mutate({
-            title,
-            content: input,
-          })}
-          className="self-end px-4 py-2 bg-black text-white rounded hover:bg-gray-800"
-        >
-          Post
-        </button>
-      )}
-
-      {postMutation.isPending && (
-        <div className="flex justify-center items-center">
-          <LoadingSpinnerLOAD />
-        </div>
-      )}
-    </div>
-  );
-};
-
 
 // use helper from api to select the types used from post.getAll -> create new type
 type PostWithUser = RouterOutputs["post"]["getAll"][number];
@@ -135,8 +53,12 @@ export const useSyncUserOnSignIn = () => {
   }, [isLoaded, isSignedIn]);
 };
 
+
 export default function Home() {
   const { user, isLoaded: userLoaded, isSignedIn } = useUser();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter();
+
   useSyncUserOnSignIn();
   
   // Start fetch data from the database ASAP
@@ -236,7 +158,10 @@ export default function Home() {
   
             <nav className="flex gap-6 items-center">
               {/* Write Post */}
-              <button className="group flex items-center gap-1 text-gray-500 hover:text-black transition-colors">
+              <button
+                onClick={() => router.push("/write")}
+                className="group flex items-center gap-1 text-gray-500 hover:text-black transition-colors"
+              >
                 <SquarePen className="w-5 h-5 text-gray-500 group-hover:text-black transition-colors" />
                 <span className="text-sm text-gray-500 group-hover:text-black transition-colors">Write</span>
               </button>
@@ -246,15 +171,18 @@ export default function Home() {
                 <Bell className="w-5 h-5" />
               </button>
 
-              <Image
-                src={user.imageUrl}
-                alt="Profile image"
-                className="w-8 h-8 rounded-full"
-                width={46}
-                height={46}
-              />
+              <div className="relative">
+                <Image
+                  src={user.imageUrl}
+                  alt="Profile image"
+                  className="w-8 h-8 rounded-full cursor-pointer"
+                  width={46}
+                  height={46}
+                  onClick={() => setDropdownOpen((prev) => !prev)} 
+                />
+                {dropdownOpen && <UserDropdown username={user.username!} />}
+              </div>
             </nav>
-
           </header>
 
           {/* Main Grid Layout */}
@@ -264,10 +192,6 @@ export default function Home() {
 
               {/* Topic slider */}
               <TopicSlider/>
-
-              <div className="border-b border-slate-400 pb-4">
-                <CreatePostWizard />
-              </div>
               <Feed />
             </section>
 

@@ -104,7 +104,7 @@ export const postRouter = createTRPCRouter({
     z.object({
       title: z.string().min(1).max(100),
       subtitle: z.string().max(200).optional(),
-      content: z.string().emoji("Only emojis are allowed").min(1).max(280),
+      content: z.string().trim().min(1, "Content is required").max(280),
       thumbnailUrl: z.string().url().optional(),
     })
   )

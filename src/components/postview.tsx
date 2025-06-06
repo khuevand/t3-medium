@@ -47,7 +47,7 @@ const PostView = (props: PostWithUser) => {
         {/* Meta row */}
         <div className="flex flex-wrap items-center text-xs text-gray-500 mt-1 gap-x-6 gap-y-2">
           {/* Date + Star */}
-          <div className="flex items-center gap-2" title="Recommended">
+          <div className="flex items-center gap-2">
             <span>⭐</span>
             <span>{dayjs(post.createdAt).format("MMM D")}</span>
           </div>

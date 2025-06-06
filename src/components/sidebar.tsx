@@ -1,4 +1,13 @@
 import Image from "next/image";
+import Link from "next/link";
+import { SignOutButton, useUser } from "@clerk/nextjs";
+import {
+  UserRound,
+  BookmarkCheck,
+  SquareChartGantt,
+  ChartColumnBig,
+} from "lucide-react";
+
 
 const Sidebar = () => {
   return (
@@ -82,5 +91,52 @@ const Sidebar = () => {
         </aside>
   );
 };
+
+// components/UserDropdown.tsx (or inside the same file above Home)
+
+export const UserDropdown = ({ username }: { username: string }) => {
+  return (
+    <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border border-gray-200 z-50">
+      <Link
+        href={`/@${username}`}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        <div className="flex items-center gap-2">
+          <UserRound className="w-4 h-4" />
+          <span>Profile</span>
+        </div>
+      </Link>
+
+      <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <BookmarkCheck className="w-4 h-4" />
+        <span>Library</span>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <SquareChartGantt className="w-4 h-4" />
+        <span>Stories</span>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-200">
+        <ChartColumnBig className="w-4 h-4" />
+        <span>Stats</span>
+      </div>
+
+      <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</div>
+
+      <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-200">
+        Help
+      </div>
+
+      <SignOutButton>
+        <button className="flex flex-col w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+          Sign out
+          <span className="text-xs text-gray-500">@{username}</span>
+        </button>
+      </SignOutButton>
+    </div>
+  );
+};
+
 
 export default Sidebar;
