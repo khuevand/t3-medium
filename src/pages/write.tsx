@@ -4,7 +4,7 @@ import { api } from "~/utils/api";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { CirclePlus } from "lucide-react";
-import { LoadingSpinnerLOAD } from "~/components/loading";
+import { LoadingSpinnerLOAD, LoadingPage } from "~/components/loading";
 import { PageLayout } from "~/components/layout";
 import Image from "next/image";
 import { Bell } from "lucide-react";
@@ -14,6 +14,7 @@ const CreatePostWizard = () => {
   const { user } = useUser();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const ctx = api.useContext();
   const router = useRouter();
 
@@ -23,6 +24,7 @@ const CreatePostWizard = () => {
       setContent("");
       toast.success("Post published successfully!");
       void ctx.post.getAll.invalidate();
+      setIsRedirecting(true);
       void router.push(`/post/${data.id}`); 
     },
     onError: (e) => {
@@ -33,6 +35,14 @@ const CreatePostWizard = () => {
   });
 
   if (!user) return null;
+
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingPage />
+      </div>
+    );
+  }
 
   return (
     <PageLayout>

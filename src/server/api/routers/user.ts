@@ -51,4 +51,62 @@ export const userRouter = createTRPCRouter({
       });
       return { followers, following };
     }),
+
+  getFollowing: publicProcedure
+  .input(z.object({ userId: z.string() }))
+  .query(async ({ input, ctx }) => {
+    const following = await ctx.db.follow.findMany({
+      where: { followerId: input.userId },
+      include: {
+        followee: true, // <- make sure this is included
+      },
+    });
+
+    return {
+      following: following.map((f) => f.followee), // return only user data
+    };
+  }),
+
+  toggleFollow: privateProcedure
+  .input(z.object({ userId: z.string() })) // target user to follow/unfollow
+  .mutation(async ({ ctx, input }) => {
+    const currentUserId = ctx.currentUser.id;
+    const targetUserId = input.userId;
+
+    if (currentUserId === targetUserId) {
+      throw new Error("You cannot follow yourself.");
+    }
+
+    // Check if the follow record exists
+    const existing = await ctx.db.follow.findUnique({
+      where: {
+        followerId_followeeId: {
+          followerId: currentUserId,
+          followeeId: targetUserId,
+        },
+      },
+    });
+
+    if (existing) {
+      // Unfollow
+      await ctx.db.follow.delete({
+        where: {
+          followerId_followeeId: {
+            followerId: currentUserId,
+            followeeId: targetUserId,
+          },
+        },
+      });
+      return { followed: false };
+    } else {
+      // Follow
+      await ctx.db.follow.create({
+        data: {
+          followerId: currentUserId,
+          followeeId: targetUserId,
+        },
+      });
+      return { followed: true };
+    }
+  }),
 });

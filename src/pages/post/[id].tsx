@@ -61,9 +61,28 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
   const createComment = api.comment.create.useMutation({
     onSuccess: async () => {
       setCommentContent("");
-      await utils.post.getById.invalidate({ id: postId }); // refresh post + comment count
+      await utils.comment.getByPostId.invalidate({ postId });
+      await utils.post.getById.invalidate({ id: postId });
     },
   });
+
+  const [isSaved, setIsSaved] = useState(false);
+  
+  const toggleSaveMutation = api.post.toggleSave.useMutation({
+      onSuccess: (data) => {
+        setIsSaved(data.saved);
+        toast.success(data.saved ? "Saved to reading list" : "Removed from reading list");
+        void utils.post.isSaved.invalidate({ postId: post.id });
+      },
+      onError: () => {
+        toast.error("Failed to update reading list");
+      },
+    });
+
+    const saveToReadingList = () => {
+      toggleSaveMutation.mutate({ postId: post.id });
+    };
+
 
   const [authorImages, setAuthorImages] = useState<Record<string, string>>({});
   useEffect(() => {
@@ -89,6 +108,27 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
 
     fetchAvatars();
   }, [comments]);
+
+  const { data: followData, isLoading: isFollowLoading } =
+  api.user.getFollowing.useQuery({ userId: user?.id ?? "" }, {
+    enabled: !!user?.id,
+  });
+
+  useEffect(() => {
+    if (followData?.following) {
+      const isFollowed = followData.following.some((f) => f.id === author.id);
+      setIsFollowing(isFollowed);
+    }
+  }, [followData, author.id]);
+
+  const toggleFollowMutation = api.user.toggleFollow.useMutation({
+    onSuccess: async () => {
+      await Promise.all([
+        utils.user.getFollowing.invalidate({ userId: user?.id ?? "" }),
+        utils.user.getFollowStats.invalidate({ userId: author.id }),
+      ]);
+    },
+  });
 
   return (
     <div className="min-h-screen w-full bg-white text-black">
@@ -163,17 +203,20 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
             </div>
             <button
               onClick={() => {
-                setIsFollowing(!isFollowing);
-                setFollowerCount((prev) => prev + (isFollowing ? -1 : 1));
-                setFollowingCount((prev) => prev + (isFollowing ? -1 : 1));
+                toggleFollowMutation.mutate({ userId: author.id });
               }}
+              disabled={toggleFollowMutation.isPending}
               className={`rounded-full px-4 py-1 text-sm border ${
                 isFollowing
                   ? "border-gray-400 text-gray-600"
                   : "bg-black text-white hover:bg-gray-800"
               }`}
             >
-              {isFollowing ? "Following" : "Follow"}
+              {toggleFollowMutation.isPending
+                ? "Loading..."
+                : isFollowing
+                ? "Following"
+                : "Follow"}
             </button>
           </div>
         )}
@@ -218,23 +261,24 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
                   }}
                 />
                 {showSaveDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded shadow-md z-10 text-sm">
-                    <div className="flex items-center justify-between px-3 py-2 hover:bg-gray-100 cursor-pointer">
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-green-600 text-white flex items-center justify-center rounded text-xs font-bold">
-                          ✓
-                        </div>
-                        <span>Reading list</span>
-                      </div>
-                      <span role="img" aria-label="lock">🔒</span>
-                    </div>
-                    <div className="px-3 py-2 text-green-700 hover:underline cursor-pointer">
-                      Create new list
+                <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded shadow-md z-10 text-sm">
+                  <div
+                    className={`flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-100 ${
+                      isSaved ? "text-green-600 font-medium" : "text-gray-700"
+                    }`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      saveToReadingList();
+                      setShowSaveDropdown(false);
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>Reading list</span>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
               </div>
-
               <span
                 title="Copy link"
                 onClick={() => {
@@ -278,18 +322,22 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
             ) : (
               <button
                 onClick={() => {
-                  setIsFollowing(!isFollowing);
-                  setFollowerCount((prev) => prev + (isFollowing ? -1 : 1));
-                  setFollowingCount((prev) => prev + (isFollowing ? -1 : 1));
+                  toggleFollowMutation.mutate({ userId: author.id });
                 }}
-                className={`rounded-full px-4 py-2 text-sm border ${
+                disabled={toggleFollowMutation.isPending}
+                className={`rounded-full px-4 py-1 text-sm border ${
                   isFollowing
                     ? "border-gray-400 text-gray-600"
                     : "bg-black text-white hover:bg-gray-800"
                 }`}
               >
-                {isFollowing ? "Following" : "Follow"}
+                {toggleFollowMutation.isPending
+                  ? "Loading..."
+                  : isFollowing
+                  ? "Following"
+                  : "Follow"}
               </button>
+
             )}
           </div>
 

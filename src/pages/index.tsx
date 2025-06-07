@@ -7,7 +7,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { api } from "~/utils/api";
 import type { RouterOutputs } from "~/utils/api";
 import { LoadingPage, LoadingSpinnerLOAD} from "~/components/loading";
-import toast, { Toaster } from "react-hot-toast";
 import { FullPageLayout } from "~/components/outerpage";
 import { PageLayout } from "~/components/layout";
 import { Search, SquarePen, Bell } from "lucide-react";
@@ -144,7 +143,9 @@ export default function Home() {
           {/* Header */}
           <header className="flex justify-between items-center px-8 py-3 border-b border-slate-300 text-sm bg-white">
             <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold font-serif">Medium</div>
+              <Link href="/">
+                <div className="text-3xl font-bold font-serif">Medium</div>
+              </Link>
               {/* Search Bar */}
                 <div className="relative">
                   <input

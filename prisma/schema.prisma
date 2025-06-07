@@ -2,8 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    binaryTargets = ["native", "rhel-openssl-1.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
@@ -12,63 +12,58 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  posts     Post[]   @relation("UserPosts")
-  comments  Comment[]
+  id       String    @id @default(cuid())
+  name     String
+  posts    Post[]    @relation("UserPosts")
+  comments Comment[]
 
-  // Followers: users who follow me
   followedBy Follow[] @relation("Followee")
+  following  Follow[] @relation("Follower")
 
-  // Following: users I follow
-  following Follow[] @relation("Follower")
+  savedPosts UserSavedPosts[]
 }
 
 model Follow {
-  id         String   @id @default(cuid())
-  follower   User     @relation("Follower", fields: [followerId], references: [id])
+  id         String @id @default(cuid())
+  follower   User   @relation("Follower", fields: [followerId], references: [id])
   followerId String
 
-  followee   User     @relation("Followee", fields: [followeeId], references: [id])
+  followee   User   @relation("Followee", fields: [followeeId], references: [id])
   followeeId String
 
   followedAt DateTime @default(now())
 
-  @@unique([followerId, followeeId]) // Prevent duplicate follows
+  @@unique([followerId, followeeId])
   @@index([followeeId])
 }
 
-
 model Comment {
-  id         String   @id @default(cuid())
-  content    String
-  createdAt  DateTime @default(now())
-  postId     String
-  post       Post     @relation(fields: [postId], references: [id])
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
 
-  authorId   String
-  author     User     @relation(fields: [authorId], references: [id])
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 
   authorName String
 
   @@index([postId])
 }
 
-
-
 // build new database
 
 model Post {
-  id          String   @id @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Content Info
-  title       String
-  subtitle    String?
-  content     String   @default("default content")
+  title    String
+  subtitle String?
+  content  String  @default("default content")
 
   // Metadata
   authorId    String
@@ -78,10 +73,23 @@ model Post {
   readTimeMin Int      @default(1)
   claps       Int      @default(0)
 
-  comments    Comment[] // ← relation
+  comments Comment[]
 
-  // Media (optional)
-  thumbnailUrl String? // URL to the thumbnail image
+  savedBy UserSavedPosts[]
+
+  thumbnailUrl String?
 
   @@index([authorId])
+}
+
+model UserSavedPosts {
+  userId String
+  postId String
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+
+  savedAt DateTime @default(now())
+
+  @@id([userId, postId])
 }

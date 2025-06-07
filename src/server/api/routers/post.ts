@@ -121,7 +121,7 @@ export const postRouter = createTRPCRouter({
         subtitle: input.subtitle ?? null,
         content: input.content,
         thumbnailUrl: input.thumbnailUrl ?? null,
-        authorId,
+        authorId: ctx.currentUser.id,
         authorName,
         publishedAt: new Date(),
         readTimeMin: 1, // optionally calculate based on content
@@ -132,19 +132,89 @@ export const postRouter = createTRPCRouter({
     return post;
   }),
   // in your server/router/post.ts
-  clap: privateProcedure
-    .input(z.object({ postId: z.string(), increment: z.boolean() }))
-    .mutation(async ({ ctx, input }) => {
-      const post = await ctx.db.post.update({
-        where: { id: input.postId },
-        data: {
-          claps: {
-            increment: input.increment ? 1 : -1,
+  clap: publicProcedure
+  .input(z.object({ postId: z.string(), increment: z.boolean() }))
+  .mutation(async ({ ctx, input }) => {
+    const post = await ctx.db.post.update({
+      where: { id: input.postId },
+      data: {
+        claps: {
+          increment: input.increment ? 1 : -1,
+        },
+      },
+    });
+    return post.claps;
+  }),
+
+  isSaved: privateProcedure
+  .input(z.object({ postId: z.string() }))
+  .query(async ({ ctx, input }) => {
+    const exists = await ctx.db.userSavedPosts.findUnique({
+      where: {
+        userId_postId: {
+          userId: ctx.currentUser.id,
+          postId: input.postId,
+        },
+      },
+    });
+
+    return !!exists;
+  }),
+
+  toggleSave: privateProcedure
+  .input(z.object({ postId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+    const { postId } = input;
+    const userId = ctx.currentUser.id;
+
+    const alreadySaved = await ctx.db.userSavedPosts.findUnique({
+      where: {
+        userId_postId: {
+          userId,
+          postId,
+        },
+      },
+    });
+
+    if (alreadySaved) {
+      await ctx.db.userSavedPosts.delete({
+        where: {
+          userId_postId: {
+            userId,
+            postId,
           },
         },
       });
+      return { saved: false };
+    } else {
+      await ctx.db.userSavedPosts.create({
+        data: {
+          userId,
+          postId,
+        },
+      });
+      return { saved: true };
+    }
+  }),
 
-      return post.claps;
-    }),
+  getSavedPosts: privateProcedure.query(async ({ ctx }) => {
+    const saved = await ctx.db.userSavedPosts.findMany({
+      where: {
+        userId: ctx.currentUser.id,
+      },
+      include: {
+        post: {
+          include: {
+            author: true, // To get author info in one query
+          },
+        },
+      },
+    });
+
+    return saved.map((entry) => ({
+      post: entry.post,
+      author: entry.post.author,
+    }));
+  }),
 
 });
