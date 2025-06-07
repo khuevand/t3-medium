@@ -29,14 +29,23 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
     { enabled: !!data }
   );
 
+  // clap part
   const [hasClapped, setHasClapped] = useState(false);
   const [clapCount, setClapCount] = useState(data?.post.claps ?? 0);
 
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!data) return <div className="p-6">Post not found.</div>;
+  
+  const clapMutation = api.post.clap.useMutation({
+    onSuccess: async (updatedClaps) => {
+      setClapCount(updatedClaps); // update local state with server value
+      await utils.post.getById.invalidate({ id: postId }); // optional re-fetch
+    },
+  });
+
+  // author, post extracted from data
 
   const { post, author,} = data;
-  // const postWithComments = post as typeof post & { commentCount?: number };
   const isAuthor = user?.id === author.id;
 
   const [isFollowing, setIsFollowing] = useState(false);
@@ -180,13 +189,10 @@ const SinglePostPage: NextPage<{ id: string }> = ({ id }) => {
                 className="flex items-center gap-2 cursor-pointer"
                 title={`${clapCount} claps`}
                 onClick={() => {
-                  if (!hasClapped) {
-                    setClapCount(clapCount + 1);
-                    setHasClapped(true);
-                  } else {
-                    setClapCount(clapCount - 1);
-                    setHasClapped(false);
-                  }
+                  const increment = !hasClapped;
+                  setHasClapped(increment);
+                  setClapCount((prev) => prev + (increment ? 1 : -1));
+                  clapMutation.mutate({ postId, increment });
                 }}
               >
                 <Heart

@@ -131,4 +131,20 @@ export const postRouter = createTRPCRouter({
 
     return post;
   }),
+  // in your server/router/post.ts
+  clap: privateProcedure
+    .input(z.object({ postId: z.string(), increment: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      const post = await ctx.db.post.update({
+        where: { id: input.postId },
+        data: {
+          claps: {
+            increment: input.increment ? 1 : -1,
+          },
+        },
+      });
+
+      return post.claps;
+    }),
+
 });
