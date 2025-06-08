@@ -37,19 +37,35 @@ const ProfileFeed: FC<ProfileFeedProps> = ({ userId }) => {
 const SavedPostsFeed: FC = () => {
   const { data, isLoading } = api.post.getSavedPosts.useQuery();
 
-  const uniqueUsernames = Array.from(new Set(data?.map(item => item.post.authorName))) ?? [];
+  // Use a stable default even if data is undefined
+  const usernames = data?.map((item) => item.post.authorName) ?? [];
+  const uniqueUsernames = Array.from(new Set(usernames));
 
-  const { data: users, isLoading: usersLoading } = api.profile.getUsersByUsernames.useQuery({
-    usernames: uniqueUsernames,
-  });
+  const { data: users, isLoading: usersLoading } = api.profile.getUsersByUsernames.useQuery(
+    { usernames: uniqueUsernames },
+    { enabled: uniqueUsernames.length > 0 } // to avoid unnecessary fetching
+  );
+
+  const [savedPosts, setSavedPosts] = useState<typeof data>([]);
+
+  // When initial data loads, update local state
+  useEffect(() => {
+    if (data) {
+      setSavedPosts(data);
+    }
+  }, [data]);
+
+  const handleUnsave = (postId: string) => {
+    setSavedPosts((prev) => prev?.filter((p) => p.post.id !== postId) ?? []);
+  };
 
   if (isLoading || usersLoading) return <LoadingPage />;
-  if (!data || !users || data.length === 0) return <div>No saved posts</div>;
+  if (!savedPosts || savedPosts.length === 0 || !users) return <div>No saved posts</div>;
 
   return (
     <div className="flex flex-col">
-      {data.map((fullPost) => {
-        const user = users.find(u => u.username === fullPost.post.authorName);
+      {savedPosts.map((fullPost) => {
+        const user = users.find((u) => u.username === fullPost.post.authorName);
         if (!user) return null;
 
         return (
@@ -57,13 +73,13 @@ const SavedPostsFeed: FC = () => {
             key={fullPost.post.id}
             post={fullPost.post}
             author={user}
+            onUnsave={handleUnsave}
           />
         );
       })}
     </div>
   );
 };
-
 
 
 const FollowingList: FC<{ userId: string }> = ({ userId }) => {

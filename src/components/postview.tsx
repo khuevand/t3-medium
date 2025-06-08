@@ -12,7 +12,12 @@ dayjs.extend(relativeTime);
 
 type PostWithUser = RouterOutputs["post"]["getAll"][number];
 
-const PostView = (props: PostWithUser) => {
+type PostViewProps = PostWithUser & {
+  onUnsave?: (postId: string) => void;
+};
+
+
+const PostView = (props: PostViewProps) => {
   const { post, author } = props;
   const postWithComments = post as typeof post & { commentCount?: number };
   const [showSaveDropdown, setShowSaveDropdown] = useState(false);
@@ -20,13 +25,13 @@ const PostView = (props: PostWithUser) => {
 
   const utils = api.useUtils();
 
-  // ✅ Load saved status via useQuery
+  // Load saved status via useQuery
   const { data: initiallySaved } = api.post.isSaved.useQuery(
     { postId: post.id },
     { enabled: !!post?.id }
   );
 
-  // ✅ Keep local state in sync
+  // Keep local state in sync
   useEffect(() => {
     if (typeof initiallySaved === "boolean") {
       setIsSaved(initiallySaved);
@@ -45,7 +50,17 @@ const PostView = (props: PostWithUser) => {
   });
 
   const saveToReadingList = () => {
-    toggleSaveMutation.mutate({ postId: post.id });
+    toggleSaveMutation.mutate({ postId: post.id }, {
+      onSuccess: (data) => {
+        setIsSaved(data.saved);
+        void utils.post.isSaved.invalidate({ postId: post.id });
+        
+        // 🔥 Trigger parent handler if post is unsaved
+        if (!data.saved && props.onUnsave) {
+          props.onUnsave(post.id);
+        }
+      },
+    });
   };
 
   return (

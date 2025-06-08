@@ -161,6 +161,19 @@ export const postRouter = createTRPCRouter({
     return !!exists;
   }),
 
+  unsave: privateProcedure
+  .input(z.object({ postId: z.string() }))
+  .mutation(async ({ ctx, input }) => {
+   await ctx.db.userSavedPosts.deleteMany({
+      where: {
+        userId: ctx.currentUser.id,
+        postId: input.postId,
+      },
+    });
+
+    return { success: true };
+  }),
+
   toggleSave: privateProcedure
   .input(z.object({ postId: z.string() }))
   .mutation(async ({ ctx, input }) => {
